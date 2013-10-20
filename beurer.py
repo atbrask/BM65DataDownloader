@@ -1,8 +1,8 @@
-import serial
+import sys, serial
 
 class Measurement(object):
     def __init__(self, data):
-        self.status = bin(data[0])
+        self.header = data[0]
         self.systolic = data[1] + 25
         self.diastolic = data[2] + 25
         self.pulse =  data[3]
@@ -17,16 +17,31 @@ class Measurement(object):
                                                              self.hours,
                                                              self.minutes)
 
+    def getBytes(self):
+        return [self.header,
+                self.systolic - 25,
+                self.diastolic - 25,
+                self.pulse,
+                self.month,
+                self.day,
+                self.hours,
+                self.minutes,
+                self.year - 2000]
+
+    def __repr__(self):
+        hexBytes = ['0x{0:02X}'.format(byte) for byte in self.getBytes()]
+        return "Measurement([{0}])".format(', '.join(hexBytes))
+
     def __str__(self):
-        return "\n".join(["Time               : {0}",
-                          "Systolic pressure  : {1} mmHg",
-                          "Diastolic pressure : {2} mmHg",
-                          "Pulse              : {3} BPM",
-                          "Status bits        : {4}"]).format(self.time,
-                                                              self.systolic,
-                                                              self.diastolic,
-                                                              self.pulse,
-                                                              self.status)
+        return "\n".join(["Header byte        : 0x{0:02X}",
+                          "Time               : {1}",
+                          "Systolic pressure  : {2} mmHg",
+                          "Diastolic pressure : {3} mmHg",
+                          "Pulse              : {4} BPM"]).format(self.header,
+                                                                  self.time,
+                                                                  self.systolic,
+                                                                  self.diastolic,
+                                                                  self.pulse)
 
 class BeurerBM65(object):
     def __init__(self, port):
@@ -65,7 +80,7 @@ class BeurerBM65(object):
         ser.close()
 
 if __name__ == "__main__":
-    conn = BeurerBM65("/dev/ttyUSB0")
+    conn = BeurerBM65(sys.argv[1])
     for idx, measurement in enumerate(conn.getMeasurements()):
         print ""
         print "MEASUREMENT {0}".format(idx + 1)
