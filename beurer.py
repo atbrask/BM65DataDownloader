@@ -1,4 +1,4 @@
-import sys, serial
+import sys, serial, time
 
 class Measurement(object):
     def __init__(self, data):
@@ -64,7 +64,12 @@ class BeurerBM65(object):
             bytesize = serial.EIGHTBITS,
             timeout = 1)
         
-        pong = self.sendBytes(ser, [0xAA])
+        while True:
+            pong = self.sendBytes(ser, [0xAA])
+            if len(pong) >= 1:
+                break
+            print "No response from device, waiting..."
+            time.sleep(2)
         print "Sent ping. Expected 0x55, got {0}".format(hex(pong[0]))
         
         description = self.bytesToString(self.sendBytes(ser, [0xA4], 32))
